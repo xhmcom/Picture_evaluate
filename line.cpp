@@ -359,14 +359,16 @@ void seg_by_hsv(Mat& src, int& num) {
 void seg_by_lab(Mat& src, int& num) {
 	Mat dst;
 	cvtColor(src, dst, CV_BGR2Lab); // RGB 转 Lab
-	//自动选k值
+	
 	int k;
 	Mat label(src.rows * src.cols, 1, CV_8UC1);
-	
-	for (k = 8; k > 1; k--) {
+	k = 3;
+	segment(src, label, k);
+	//自动选k值
+	/*for (k = 8; k > 1; k--) {
 		if (segment(src, label, k)) break;// 直接用rgb色彩空间用分割
 	}
-	if (k == 1) k = 2;
+	if (k == 1) k = 2;*/
 	
 
 	vector<Vec3b> m_color(k);
@@ -396,6 +398,15 @@ void seg_by_lab(Mat& src, int& num) {
 		cout << i + 1 << ":" << area_ratio[i] << endl;
 		of << i + 1 << ":" << area_ratio[i] << endl;
 	}
+	//评分
+	double largest_hue, o_hue1, o_hue2;
+	o_hue1 = norm_dis(0.191, 0.191 / 3, area_ratio[1]) / norm_dis(0.191, 0.191 / 3, 0.191) * 19.1;
+	largest_hue = norm_dis(0.618, 0.618 / 3, area_ratio[0]) / norm_dis(0.618, 0.618 / 3, 0.618) * 61.8;
+	o_hue2 = norm_dis(0.191, 0.191 / 3, area_ratio[2]) / norm_dis(0.191, 0.191 / 3, 0.191) * 19.1;
+	double final_hue = largest_hue + o_hue1 + o_hue2;
+	cout << "score: " << final_hue << endl;
+	of << "score: " << final_hue << endl;
+
 	cout << "color:" << endl;
 	for (int i = 0; i < k; i++) {
 
@@ -438,9 +449,9 @@ int main(int argc, char* argv[]) {
 		// convert image to Lab space
 		//imshow("src", src);
 		
-		//seg_by_lab(src, num);
+		seg_by_lab(src, num);
 		//seg_by_gray(src, num);
-		seg_by_hsv(src, num);
+		//seg_by_hsv(src, num);
 	}
 	system("pause");
 	of.close();
