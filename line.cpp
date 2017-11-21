@@ -1,34 +1,15 @@
 #include <opencv.hpp>
-#include <algorithm>
 #include <iostream>
-#include <queue>
-#include <vector>
-#include <ctime>
-#include <set>
-#include <direct.h>
-#include <math.h>
-#include <fstream>
+#include <string>
+//#include <fstream>
+#include "Harmonious.h"
 #define M_PI 3.1415926
 
 using namespace std;
 using namespace cv;
 
-struct Slice {
-public:
-	int minx, miny, maxx, maxy;
-	uchar color;
-	int area;
-	Slice(int _minx, int _miny, int _maxx, int _maxy, uchar _color)
-		:minx(_minx), miny(_miny), maxx(_maxx), maxy(_maxy), color(_color), area(1) {
-
-	}
-};
-
-// the const defintion
-//const int k = 4;
 int cnt_area[8];
-ofstream of;
-// segment the image by kmeans in Lab color space
+//ofstream of;
 
 bool segment_huidu(const Mat& src, Mat& label, int k) {
 	Mat centers(k, 1, CV_32F);
@@ -54,8 +35,8 @@ bool segment_huidu(const Mat& src, Mat& label, int k) {
 		}
 	}
 	//输出最小颜色差距
-	cout << min_centers << endl;
-	of << min_centers << endl;
+	//cout << min_centers << endl;
+	//of << min_centers << endl;
 	if (min_centers > 33) {
 		return true;
 	}
@@ -82,8 +63,8 @@ bool segment_by_hsv(const Mat& src, Mat& label, int k) {
 		}
 	}
 	//输出最小颜色差距
-	cout << min_centers << endl;
-	of << min_centers << endl;
+	//cout << min_centers << endl;
+	//of << min_centers << endl;
 	if (min_centers > 35) {
 		return true;
 	}
@@ -113,8 +94,8 @@ bool segment(const Mat& src, Mat& label, int k) {
 		}
 	}
 	//输出最小颜色差距
-	cout << min_centers << endl;
-	of << min_centers << endl;
+	//cout << min_centers << endl;
+	//of << min_centers << endl;
 	if (min_centers > 50) {
 		return true;
 	}
@@ -182,14 +163,6 @@ Vec3b mean_color(const Mat& src, const Mat& label, int color) {
 	return decode(mx);
 }
 
-void fill_mean(Mat& src, const Mat& label, const vector<Vec3b>& m_color) {
-	
-	for (int i = 0; i < src.rows * src.cols; i++) {
-		src.at<Vec3b>(i / src.cols, i % src.cols) = m_color[label.at<int>(i, 0)];
-		cnt_area[label.at<int>(i, 0)]++;
-	}
-}
-
 double norm_dis(double miu, double sig, double x) {
 	return (1 / sqrt(2 * M_PI * sig * sig)) * exp(-pow(x - miu, 2) / (2 * sig * sig));
 }
@@ -207,7 +180,8 @@ float mean_gray(Mat& src, Mat& label, int color) {
 	return color_mean;
 }
 
-void seg_by_gray(Mat& src, int& num) {
+double seg_by_gray(string path, int num) {
+	Mat src = imread(path);
 	Mat dst;
 	cvtColor(src, dst, COLOR_RGB2GRAY); // RGB 转 gray
 	imwrite("result/" + to_string(num) + "__gray.jpg", dst);
@@ -246,30 +220,32 @@ void seg_by_gray(Mat& src, int& num) {
 
 	for (int i = 0; i < k; i++) {
 		area_ratio[i] = (float)color_area[bj[i]] / (src.cols*src.rows);
-		cout << i + 1 << ":" << area_ratio[i] << endl;
-		of << i + 1 << ":" << area_ratio[i] << endl;
+		//cout << i + 1 << ":" << area_ratio[i] << endl;
+		//of << i + 1 << ":" << area_ratio[i] << endl;
 	}
 	double high_value, mid_value, low_value;
 	high_value = norm_dis(0.191, 0.191 / 3, area_ratio[0]) / norm_dis(0.191, 0.191 / 3, 0.191) * 19.1;
 	mid_value = norm_dis(0.618, 0.618 / 3, area_ratio[1] + area_ratio[2] + area_ratio[3]) / norm_dis(0.618, 0.618 / 3, 0.618) * 61.8;
 	low_value = norm_dis(0.191, 0.191 / 3, area_ratio[4]) / norm_dis(0.191, 0.191 / 3, 0.191) * 19.1;
 	double final_value = high_value + mid_value + low_value;
-	cout << "score: " << final_value << endl;
-	of << "score: " << final_value << endl;
+	//cout << "score: " << final_value << endl;
+	//of << "score: " << final_value << endl;
 	//norm_dis()
-	cout << "color:" << endl;
+	//cout << "color:" << endl;
 	for (int i = 0; i < k; i++) {
 
 		uchar color = m_color[bj[i]];
 
-		cout << i + 1 << ":" << " g=" << (int)color << endl;
-		of << i + 1 << ":" << " g=" << (int)color << endl;
+		//cout << i + 1 << ":" << " g=" << (int)color << endl;
+		//of << i + 1 << ":" << " g=" << (int)color << endl;
 	}
 
-	cout << "------------------------" << endl;
-	cout << endl;
-	of << "------------------------" << endl;
-	of << endl;
+	//cout << "------------------------" << endl;
+	//cout << endl;
+	//of << "------------------------" << endl;
+	//of << endl;
+
+	return final_value;
 }
 
 uchar mean_hsv(Mat& src, Mat& label, int color) {
@@ -286,7 +262,8 @@ uchar mean_hsv(Mat& src, Mat& label, int color) {
 	return color_mean;
 }
 
-void seg_by_hsv(Mat& src, int& num) {
+double seg_by_hsv(string path, int num) {
+	Mat src = imread(path);
 	Mat dst;
 	cvtColor(src, dst, CV_BGR2HSV); // RGB 转 Hsv
 	
@@ -330,8 +307,8 @@ void seg_by_hsv(Mat& src, int& num) {
 	// 输出各个色块比例
 	for (int i = 0; i < k; i++) {
 		area_ratio[i] = (float)color_area[bj[i]] / (src.cols*src.rows);
-		cout << i + 1 << ":" << area_ratio[i] << endl;
-		of << i + 1 << ":" << area_ratio[i] << endl;
+		//cout << i + 1 << ":" << area_ratio[i] << endl;
+		//of << i + 1 << ":" << area_ratio[i] << endl;
 	}
 	// 评分
 	double high_sat, mid_sat, low_sat;
@@ -339,24 +316,27 @@ void seg_by_hsv(Mat& src, int& num) {
 	mid_sat = norm_dis(0.618, 0.618 / 3, area_ratio[1] + area_ratio[2] + area_ratio[3]) / norm_dis(0.618, 0.618 / 3, 0.618) * 61.8;
 	low_sat = norm_dis(0.191, 0.191 / 3, area_ratio[4]) / norm_dis(0.191, 0.191 / 3, 0.191) * 19.1;
 	double final_value = high_sat + mid_sat + low_sat;
-	cout << "score: " << final_value << endl;
-	of << "score: " << final_value << endl;
+	//cout << "score: " << final_value << endl;
+	//of << "score: " << final_value << endl;
 	// 输出颜色
-	cout << "color:" << endl;
+	//cout << "color:" << endl;
 	for (int i = 0; i < k; i++) {
 
 		Vec3b color = m_rgb_color[bj[i]];
 
-		cout << i + 1 << ":" << " B=" << (int)color[0] << " G=" << (int)color[1] << " R=" << (int)color[2] << endl;
-		of << i + 1 << ":" << " B=" << (int)color[0] << " G=" << (int)color[1] << " R=" << (int)color[2] << endl;
+		//cout << i + 1 << ":" << " B=" << (int)color[0] << " G=" << (int)color[1] << " R=" << (int)color[2] << endl;
+		//of << i + 1 << ":" << " B=" << (int)color[0] << " G=" << (int)color[1] << " R=" << (int)color[2] << endl;
 	}
 
-	cout << "------------------------" << endl;
-	cout << endl;
-	of << "------------------------" << endl;
-	of << endl;
+	//cout << "------------------------" << endl;
+	//cout << endl;
+	//of << "------------------------" << endl;
+	//of << endl;
+
+	return final_value;
 }
-void seg_by_lab(Mat& src, int& num) {
+double seg_by_lab(string path, int num) {
+	Mat src = imread(path);
 	Mat dst;
 	cvtColor(src, dst, CV_BGR2Lab); // RGB 转 Lab
 	
@@ -395,8 +375,8 @@ void seg_by_lab(Mat& src, int& num) {
 
 	for (int i = 0; i < k; i++) {
 		area_ratio[i] = (float)color_area[bj[i]] / (src.cols*src.rows);
-		cout << i + 1 << ":" << area_ratio[i] << endl;
-		of << i + 1 << ":" << area_ratio[i] << endl;
+		//cout << i + 1 << ":" << area_ratio[i] << endl;
+		//of << i + 1 << ":" << area_ratio[i] << endl;
 	}
 	//评分
 	double largest_hue, o_hue1, o_hue2;
@@ -404,57 +384,23 @@ void seg_by_lab(Mat& src, int& num) {
 	largest_hue = norm_dis(0.618, 0.618 / 3, area_ratio[0]) / norm_dis(0.618, 0.618 / 3, 0.618) * 61.8;
 	o_hue2 = norm_dis(0.191, 0.191 / 3, area_ratio[2]) / norm_dis(0.191, 0.191 / 3, 0.191) * 19.1;
 	double final_hue = largest_hue + o_hue1 + o_hue2;
-	cout << "score: " << final_hue << endl;
-	of << "score: " << final_hue << endl;
+	//cout << "score: " << final_hue << endl;
+	//of << "score: " << final_hue << endl;
 
-	cout << "color:" << endl;
+	//cout << "color:" << endl;
 	for (int i = 0; i < k; i++) {
 
 		Vec3b color = m_color[bj[i]];
 
-		cout << i + 1 << ":" << " B=" << (int)color[0] << " G=" << (int)color[1] << " R=" << (int)color[2] << endl;
-		of << i + 1 << ":" << " B=" << (int)color[0] << " G=" << (int)color[1] << " R=" << (int)color[2] << endl;
+		//cout << i + 1 << ":" << " B=" << (int)color[0] << " G=" << (int)color[1] << " R=" << (int)color[2] << endl;
+		//of << i + 1 << ":" << " B=" << (int)color[0] << " G=" << (int)color[1] << " R=" << (int)color[2] << endl;
 	}
 
-	cout << "------------------------" << endl;
-	cout << endl;
-	of << "------------------------" << endl;
-	of << endl;
+	//cout << "------------------------" << endl;
+	//cout << endl;
+	//of << "------------------------" << endl;
+	//of << endl;
+
+	return final_hue;
 }
 
-int main(int argc, char* argv[]) {
-	
-	of.open("result.txt");
-	/*for (float x = 0.3; x > 0; x -= 0.02) {
-		cout << x << ": " << norm_dis(0.191, 0.191 / 3, x) / norm_dis(0.191, 0.191 / 3, 0.191) << endl;
-	}
-	
-	system("pause");
-	return 0;*/
-	for (int num = 1; num <= 162; num++){
-		//if (num != 40) continue;
-		//if (num != 1 && num != 3 && num != 40 && num != 87) continue;
-		cout << "-----------" << num << "-----------" << endl;
-		of << "-----------" << num << "-----------" << endl;
-		Mat src;
-
-		if (argc > 1)
-			src = imread(argv[1]);
-		else
-			src = imread("pic/raw_" + to_string(num) + ".jpg");
-
-		imwrite("result/" + to_string(num) + ".jpg", src);
-		CV_Assert(!src.empty());
-		//cout << "src.rows = " << src.rows << " src.cols = " << src.cols << endl;
-		// convert image to Lab space
-		//imshow("src", src);
-		
-		seg_by_lab(src, num);
-		//seg_by_gray(src, num);
-		//seg_by_hsv(src, num);
-	}
-	system("pause");
-	of.close();
-	
-	return 0;
-}
