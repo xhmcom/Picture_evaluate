@@ -1,19 +1,19 @@
+#include "Harmonious.h"
 #include <opencv.hpp>
 #include <iostream>
-#include <string>
-//#include <fstream>
-#include "Harmonious.h"
+#include <fstream>
+
 #define M_PI 3.1415926
 
 using namespace std;
 using namespace cv;
 
 int cnt_area[8];
-//ofstream of;
+extern ofstream of;
 
 bool segment_huidu(const Mat& src, Mat& label, int k) {
 	Mat centers(k, 1, CV_32F);
-	Mat p = Mat::zeros(src.cols * src.rows, 1, CV_32F);
+	Mat p = Mat::zeros(src.cols * src.rows, 1, CV_32F);	
 	
 	for (int i = 0; i < src.cols * src.rows; i++) {
 		p.at<float>(i, 0) = src.at<uchar>(i / src.cols, i % src.cols);
@@ -113,7 +113,20 @@ void show_color(const Mat& src, const Mat& label, int color, int num, int id) {
 	}
 	string s_id = to_string((int)id);
 	//imshow("color" + id, im);
-	imwrite("result/" +to_string(num) + "_color_" + s_id + ".jpg", im);
+	imwrite("result/" +to_string(num) + "_rgbcolor_" + s_id + ".jpg", im);
+}
+void show_hsv_color(const Mat& src, const Mat& label, int color, int num, int id) {
+	Mat im = src.clone();
+	for (int i = 0; i < src.rows * src.cols; i++) {
+		if (label.at<int>(i, 0) != color) {
+			im.at<Vec3b>(i / src.cols, i % src.cols)[0] = 0;
+			im.at<Vec3b>(i / src.cols, i % src.cols)[1] = 0;
+			im.at<Vec3b>(i / src.cols, i % src.cols)[2] = 0;
+		}
+	}
+	string s_id = to_string((int)id);
+	//imshow("color" + id, im);
+	imwrite("result/" + to_string(num) + "_hsvcolor_" + s_id + ".jpg", im);
 }
 void show_gray_color(const Mat& src, const Mat& label, int color, int num, int id) {
 	Mat im = src.clone();
@@ -125,7 +138,7 @@ void show_gray_color(const Mat& src, const Mat& label, int color, int num, int i
 	}
 	string s_id = to_string((int)id);
 	//imshow("color" + id, im);
-	imwrite("result/" + to_string(num) + "_color_" + s_id + ".jpg", im);
+	imwrite("result/" + to_string(num) + "_graycolor_" + s_id + ".jpg", im);
 }
 
 // calculate the mean color for each group
@@ -220,30 +233,30 @@ double seg_by_gray(string path, int num) {
 
 	for (int i = 0; i < k; i++) {
 		area_ratio[i] = (float)color_area[bj[i]] / (src.cols*src.rows);
-		//cout << i + 1 << ":" << area_ratio[i] << endl;
-		//of << i + 1 << ":" << area_ratio[i] << endl;
+		cout << i + 1 << ":" << area_ratio[i] << endl;
+		of << i + 1 << ":" << area_ratio[i] << endl;
 	}
 	double high_value, mid_value, low_value;
 	high_value = norm_dis(0.191, 0.191 / 3, area_ratio[0]) / norm_dis(0.191, 0.191 / 3, 0.191) * 19.1;
 	mid_value = norm_dis(0.618, 0.618 / 3, area_ratio[1] + area_ratio[2] + area_ratio[3]) / norm_dis(0.618, 0.618 / 3, 0.618) * 61.8;
 	low_value = norm_dis(0.191, 0.191 / 3, area_ratio[4]) / norm_dis(0.191, 0.191 / 3, 0.191) * 19.1;
 	double final_value = high_value + mid_value + low_value;
-	//cout << "score: " << final_value << endl;
-	//of << "score: " << final_value << endl;
+	cout << "score: " << final_value << endl;
+	of << "score: " << final_value << endl;
 	//norm_dis()
-	//cout << "color:" << endl;
+	cout << "color:" << endl;
 	for (int i = 0; i < k; i++) {
 
 		uchar color = m_color[bj[i]];
 
-		//cout << i + 1 << ":" << " g=" << (int)color << endl;
-		//of << i + 1 << ":" << " g=" << (int)color << endl;
+		cout << i + 1 << ":" << " g=" << (int)color << endl;
+		of << i + 1 << ":" << " g=" << (int)color << endl;
 	}
 
-	//cout << "------------------------" << endl;
-	//cout << endl;
-	//of << "------------------------" << endl;
-	//of << endl;
+	cout << "------------------------" << endl;
+	cout << endl;
+	of << "------------------------" << endl;
+	of << endl;
 
 	return final_value;
 }
@@ -300,15 +313,15 @@ double seg_by_hsv(string path, int num) {
 	}
 	// 输出各个色块
 	for (int i = 0; i < k; i++) {
-		show_color(src, label, bj[i], num, i);
+		show_hsv_color(src, label, bj[i], num, i);
 	}
 
 	float area_ratio[8];
 	// 输出各个色块比例
 	for (int i = 0; i < k; i++) {
 		area_ratio[i] = (float)color_area[bj[i]] / (src.cols*src.rows);
-		//cout << i + 1 << ":" << area_ratio[i] << endl;
-		//of << i + 1 << ":" << area_ratio[i] << endl;
+		cout << i + 1 << ":" << area_ratio[i] << endl;
+		of << i + 1 << ":" << area_ratio[i] << endl;
 	}
 	// 评分
 	double high_sat, mid_sat, low_sat;
@@ -316,22 +329,22 @@ double seg_by_hsv(string path, int num) {
 	mid_sat = norm_dis(0.618, 0.618 / 3, area_ratio[1] + area_ratio[2] + area_ratio[3]) / norm_dis(0.618, 0.618 / 3, 0.618) * 61.8;
 	low_sat = norm_dis(0.191, 0.191 / 3, area_ratio[4]) / norm_dis(0.191, 0.191 / 3, 0.191) * 19.1;
 	double final_value = high_sat + mid_sat + low_sat;
-	//cout << "score: " << final_value << endl;
-	//of << "score: " << final_value << endl;
+	cout << "score: " << final_value << endl;
+	of << "score: " << final_value << endl;
 	// 输出颜色
-	//cout << "color:" << endl;
+	cout << "color:" << endl;
 	for (int i = 0; i < k; i++) {
 
 		Vec3b color = m_rgb_color[bj[i]];
 
-		//cout << i + 1 << ":" << " B=" << (int)color[0] << " G=" << (int)color[1] << " R=" << (int)color[2] << endl;
-		//of << i + 1 << ":" << " B=" << (int)color[0] << " G=" << (int)color[1] << " R=" << (int)color[2] << endl;
+		cout << i + 1 << ":" << " B=" << (int)color[0] << " G=" << (int)color[1] << " R=" << (int)color[2] << endl;
+		of << i + 1 << ":" << " B=" << (int)color[0] << " G=" << (int)color[1] << " R=" << (int)color[2] << endl;
 	}
 
-	//cout << "------------------------" << endl;
-	//cout << endl;
-	//of << "------------------------" << endl;
-	//of << endl;
+	cout << "------------------------" << endl;
+	cout << endl;
+	of << "------------------------" << endl;
+	of << endl;
 
 	return final_value;
 }
@@ -375,31 +388,31 @@ double seg_by_lab(string path, int num) {
 
 	for (int i = 0; i < k; i++) {
 		area_ratio[i] = (float)color_area[bj[i]] / (src.cols*src.rows);
-		//cout << i + 1 << ":" << area_ratio[i] << endl;
-		//of << i + 1 << ":" << area_ratio[i] << endl;
+		cout << i + 1 << ":" << area_ratio[i] << endl;
+		of << i + 1 << ":" << area_ratio[i] << endl;
 	}
 	//评分
-	double largest_hue, o_hue1, o_hue2;
-	o_hue1 = norm_dis(0.191, 0.191 / 3, area_ratio[1]) / norm_dis(0.191, 0.191 / 3, 0.191) * 19.1;
+	double largest_hue, other_hue;
+	other_hue = norm_dis(0.382, 0.382 / 3, area_ratio[1] + area_ratio[2]) / norm_dis(0.382, 0.382 / 3, 0.382) * 38.2;
 	largest_hue = norm_dis(0.618, 0.618 / 3, area_ratio[0]) / norm_dis(0.618, 0.618 / 3, 0.618) * 61.8;
-	o_hue2 = norm_dis(0.191, 0.191 / 3, area_ratio[2]) / norm_dis(0.191, 0.191 / 3, 0.191) * 19.1;
-	double final_hue = largest_hue + o_hue1 + o_hue2;
-	//cout << "score: " << final_hue << endl;
-	//of << "score: " << final_hue << endl;
+	
+	double final_hue = largest_hue + other_hue;
+	cout << "score: " << final_hue << endl;
+	of << "score: " << final_hue << endl;
 
-	//cout << "color:" << endl;
+	cout << "color:" << endl;
 	for (int i = 0; i < k; i++) {
 
 		Vec3b color = m_color[bj[i]];
 
-		//cout << i + 1 << ":" << " B=" << (int)color[0] << " G=" << (int)color[1] << " R=" << (int)color[2] << endl;
-		//of << i + 1 << ":" << " B=" << (int)color[0] << " G=" << (int)color[1] << " R=" << (int)color[2] << endl;
+		cout << i + 1 << ":" << " B=" << (int)color[0] << " G=" << (int)color[1] << " R=" << (int)color[2] << endl;
+		of << i + 1 << ":" << " B=" << (int)color[0] << " G=" << (int)color[1] << " R=" << (int)color[2] << endl;
 	}
 
-	//cout << "------------------------" << endl;
-	//cout << endl;
-	//of << "------------------------" << endl;
-	//of << endl;
+	cout << "------------------------" << endl;
+	cout << endl;
+	of << "------------------------" << endl;
+	of << endl;
 
 	return final_hue;
 }
